@@ -11,13 +11,29 @@ RED = "#d7191c"
 AMBER = "#e8a317"
 GREY = "#8c8c8c"
 
+# Ruimte bovenaan: de titel staat helemaal bovenaan, daaronder komt de legende,
+# en pas daarna begint het tekengebied. Zo overlappen ze elkaar nooit.
 _LAYOUT = dict(
     template="plotly_white",
-    height=430,
-    margin=dict(l=60, r=30, t=60, b=50),
+    height=470,
+    margin=dict(l=60, r=30, t=110, b=50),
     hovermode="x unified",
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+    legend=dict(orientation="h", yanchor="bottom", y=1.03, x=0),
 )
+
+
+def _title(text: str) -> dict:
+    """Grafiektitel bovenaan verankerd, los van de legende."""
+    return dict(
+        text=text,
+        x=0,
+        xref="paper",
+        xanchor="left",
+        y=0.97,
+        yref="container",
+        yanchor="top",
+        font=dict(size=17),
+    )
 
 
 def _date_axis(fig: go.Figure) -> go.Figure:
@@ -56,7 +72,7 @@ def chart_ust10y(df: pd.DataFrame, cfg: Dict[str, Any]) -> go.Figure:
                   annotation_text=f"Trigger {trigger:.2f}% (3 dagen op rij)", annotation_position="top left")
     fig.add_hline(y=warn, line=dict(color=AMBER, width=1.6, dash="dot"),
                   annotation_text=f"Waarschuwing {warn:.2f}%", annotation_position="bottom left")
-    fig.update_layout(title="1. 10-jaars US Treasury yield", yaxis_title="Yield (%)", **_LAYOUT)
+    fig.update_layout(title=_title("1. 10-jaars US Treasury yield"), yaxis_title="Yield (%)", **_LAYOUT)
     return _date_axis(fig)
 
 
@@ -80,7 +96,7 @@ def chart_kre(df: pd.DataFrame, cfg: Dict[str, Any]) -> go.Figure:
     floor = float(c["absolute_floor"])
     fig.add_hline(y=floor, line=dict(color="#7b3294", width=1.4, dash="dashdot"),
                   annotation_text=f"Absolute vloer ${floor:.2f} (legacy)", annotation_position="bottom right")
-    fig.update_layout(title="2. KRE - regionale banken", yaxis_title="Koers (USD)", **_LAYOUT)
+    fig.update_layout(title=_title("2. KRE - regionale banken"), yaxis_title="Koers (USD)", **_LAYOUT)
     return _date_axis(fig)
 
 
@@ -96,8 +112,12 @@ def chart_kre_drawdown(df: pd.DataFrame, cfg: Dict[str, Any]) -> go.Figure:
     fig.add_hline(y=float(c["drawdown_trigger_pct"]), line=dict(color=RED, width=2, dash="dash"),
                   annotation_text="-30% crashdrempel", annotation_position="bottom left")
     layout = dict(_LAYOUT)
-    layout["height"] = 320
-    fig.update_layout(title="2b. KRE drawdown t.o.v. 52-weeks hoogtepunt", yaxis_title="Drawdown (%)", **layout)
+    layout["height"] = 360
+    fig.update_layout(
+        title=_title("2b. KRE drawdown t.o.v. 52-weeks hoogtepunt"),
+        yaxis_title="Drawdown (%)",
+        **layout,
+    )
     return _date_axis(fig)
 
 
@@ -118,5 +138,9 @@ def chart_credit(df: pd.DataFrame, cfg: Dict[str, Any]) -> go.Figure:
                   annotation_text=f"Stressdrempel {trigger:.2f}%", annotation_position="top left")
     fig.add_hline(y=warn, line=dict(color=AMBER, width=1.6, dash="dot"),
                   annotation_text=f"Waarschuwing {warn:.2f}%", annotation_position="top left")
-    fig.update_layout(title="3. Credit spreads (high yield)", yaxis_title="Spread (procentpunten)", **_LAYOUT)
+    fig.update_layout(
+        title=_title("3. Credit spreads (high yield)"),
+        yaxis_title="Spread (procentpunten)",
+        **_LAYOUT,
+    )
     return _date_axis(fig)
