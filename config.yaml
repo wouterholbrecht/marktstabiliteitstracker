@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# Configuratie van de Market Stability Tracker (Druckenmiller-signalen)
+# Alle drempels staan hier centraal zodat je ze kan aanpassen zonder code te wijzigen.
+# ---------------------------------------------------------------------------
+
+history_file: data/history.csv
+history_years: 1          # minimale historiek die de backfill opbouwt (in jaren)
+week_anchor: "W-FRI"      # weekafsluiting: vrijdagclose
+
+signals:
+
+  # -------------------------------------------------------------------------
+  # 1. 10-jaars US Treasury yield
+  # -------------------------------------------------------------------------
+  ust10y:
+    label: "10y US Treasury yield"
+    source: "FRED:DGS10"
+    unit: "%"
+    # Hoofdregel van de gebruiker: >5% gedurende 3 opeenvolgende handelsdagen
+    trigger_level: 5.0
+    trigger_consecutive_days: 3
+    # Waarschuwingszone (geel) voor het signaal effectief afgaat
+    warn_level: 4.75
+    higher_is_worse: true
+
+  # -------------------------------------------------------------------------
+  # 2. Regionale banken (KRE ETF)
+  # -------------------------------------------------------------------------
+  kre:
+    label: "KRE - SPDR S&P Regional Banking ETF"
+    source: "YF:KRE"
+    unit: "USD"
+    # (a) Relatieve regel = de eigenlijke Druckenmiller-logica: -30% crash
+    drawdown_window_days: 365      # rollend 52-weeks hoogtepunt
+    drawdown_trigger_pct: -30.0    # rood vanaf -30% t.o.v. 52w high
+    drawdown_warn_pct: -15.0       # geel vanaf -15%
+    # (b) Absolute vloer die de gebruiker oorspronkelijk opgaf.
+    #     LET OP: die 31,5 was gebaseerd op een koers van ~45 USD.
+    #     KRE noteert intussen veel hoger, dus deze vloer is historisch/legacy.
+    #     Zet enabled: true als je hem toch mee wil laten wegen in de status.
+    absolute_floor: 31.5
+    absolute_floor_enabled: false
+    higher_is_worse: false
+
+  # -------------------------------------------------------------------------
+  # 3. Credit spreads
+  # -------------------------------------------------------------------------
+  credit_spread:
+    label: "US High Yield credit spread (ICE BofA OAS)"
+    source: "FRED:BAMLH0A0HYM2"
+    unit: "%"
+    trigger_level: 6.0     # rood vanaf 6,00%
+    warn_level: 4.5        # geel vanaf 4,50%
+    higher_is_worse: true
+
+  # Secundaire proxy: HYG vs AGG, berekend uit de effectief uitgekeerde
+  # distributies over de laatste 12 maanden (trailing twelve month yield).
+  # Dit is GEEN OAS: het is een ruwe yield-differentiaal en ligt structureel
+  # lager dan de officiele OAS. Enkel ter controle/kruispeiling.
+  credit_spread_proxy:
+    label: "Proxy: HYG TTM yield - AGG TTM yield"
+    source: "YF:HYG,AGG"
+    unit: "%"
+    trigger_level: 6.0
+    warn_level: 4.5
+    higher_is_worse: true
+    advisory_only: true    # telt niet mee in de globale status
