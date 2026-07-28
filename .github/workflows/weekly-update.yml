@@ -1,0 +1,38 @@
+name: Weekly tracker update
+
+on:
+  schedule:
+    - cron: "0 7 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Update history
+        run: python scripts/update.py --weeks 3
+
+      - name: Commit new data points
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/history.csv
+          if git diff --staged --quiet; then
+            echo "Geen wijzigingen."
+          else
+            git commit -m "chore: weekly tracker update ($(date -u +%Y-%m-%d))"
+            git push
+          fi
